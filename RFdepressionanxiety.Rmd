@@ -1,0 +1,52 @@
+---
+title: "idoszar"
+author: "Sulyok"
+date: "9/27/2021"
+output: word_document
+---
+
+
+```{r setup, echo=TRUE}
+library(readr)
+time_data_final <- read_csv("Downloads/time_data_final.csv")
+time_data_final[c(1:2)]<-lapply(time_data_final[c(1:2)], factor)
+time_data_final$Clinical<-factor(ifelse(time_data_final$Clinical==0, 2, 1))
+
+
+library(randomForestSRC)
+#train<-sample(1:nrow(datadongeung), round(nrow(datadongeung)*0.8))
+set.seed(12345)
+time_data_final<-as.data.frame(time_data_final)
+tunedgrow<-tune.rfsrc(Mot_dist ~. , data = time_data_final, trace=FALSE, doBest=TRUE, na.action="na.imput")
+tunedgrow
+set.seed(12345)
+grow<-rfsrc(Mot_dist ~. , data = time_data_final, nodesize=tunedgrow$optimal["nodesize"], mtry=tunedgrow$optimal["mtry"], trace=TRUE)
+set.seed(12345)
+pred<-predict(grow, time_data_final)
+set.seed(12345)
+print(grow)
+set.seed(12345)
+print(pred)
+
+
+
+pdf(file="varrf.pdf", height=8, width = 8)
+plot.variable.rfsrc(grow, xvar.names = grow$xvar.names, partial=TRUE, oob=TRUE)
+dev.off()
+set.seed(12345)
+sort(vimp(grow)$importance)
+
+library(ggRandomForests)
+gg_dta <- gg_vimp(grow)
+plot(gg_dta)
+
+gg_dta<- gg_minimal_depth(grow)
+plot(gg_dta)
+
+gg_v <- gg_variable(grow)
+plot(gg_v)
+
+
+
+
+```
